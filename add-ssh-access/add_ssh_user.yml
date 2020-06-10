@@ -1,0 +1,22 @@
+---
+- name: Add SSH user
+  hosts: example_host1,example_host2
+  become: true
+  vars:
+    username: <insert username here>
+  tasks:
+  - name: Add Local User
+    shell: useradd {{ username }}
+  - name: Create .ssh directory
+    shell: mkdir /home/{{ username }}/.ssh && chmod 700 /home/{{ username }}/.ssh && chown {{ username }}:{{ username}} /home/{{ username }}/.ssh
+  - name: Copy public key
+    copy:
+      src: /path/to/rsa-keys/authorized_keys-{{ username }}
+      dest: /home/{{ username}}/.ssh/authorized_keys
+      owner: "{{ username }}"
+      group: "{{ username }}"
+      mode: 0700
+  - name: Update sshd_config file
+    shell: sed -i 's/AllowUsers.*/& {{ username }}/' /etc/ssh/sshd_config
+  - name: restart sshd service
+    service: name=sshd state=restarted
